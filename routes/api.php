@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProjectController;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,4 +26,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::patch('/projects', [ProjectController::class, 'update']);
+    Route::get('/projects/{id}/users/{username}', [ProjectController::class, 'findProposedUsers']);
+    Route::post('/project/addUser', [ProjectController::class, 'addUser']);
 });
+Route::get('/project/{id}/users', [ProjectController::class, 'getUsersInProject']);
