@@ -73,7 +73,7 @@ class ProjectController extends Controller
         //return response(200, "New project has been created");
     }
 
-    public function projectDifference($column, $data, $operator = '=')
+    private function projectDifference($column, $data, $operator = '=')
     {
         $difference = Project::where($column, $operator, $data)->get();
 
@@ -201,6 +201,22 @@ class ProjectController extends Controller
         } catch (\Throwable $th) {
             throw $th;
             return response($th);
+        }
+    }
+
+    public function changeProjectStatus(Request $request)
+    {
+        $validation = $request->validate([
+            'project_id' => 'required',
+            'status' => 'required|between:0,1'
+        ]);
+        DB::beginTransaction();
+        try {
+            $project = Project::where('id', '=', $request->project_id)->update(['status' => $request->status]);
+            DB::commit();
+            return response('Project status, has been changed!', 200);
+        } catch (\Throwable $th) {
+            throw $th;
         }
     }
 }
