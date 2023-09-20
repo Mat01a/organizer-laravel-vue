@@ -17,12 +17,16 @@ class PermissionFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => fake()->randomDigit(),
             'project_id' => fake()->randomDigit(),
             'name' => fake()->word(),
             'read' => fake()->numberBetween(0, 1),
             'write' => fake()->numberBetween(0, 1),
-            'givePermissions' => fake()->numberBetween(0, 1),
+            'changeName' => fake()->numberBetween(0, 1),
+            'addUsers' => fake()->numberBetween(0, 1),
+            'removeUsers' => fake()->numberBetween(0, 1),
+            'changeStatus' => fake()->numberBetween(0, 1),
+            'createPermissions' => fake()->numberBetween(0, 1),
+            'changePermissions' => fake()->numberBetween(0, 1),
         ];
     }
 }

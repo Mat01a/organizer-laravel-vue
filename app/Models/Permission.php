@@ -10,11 +10,15 @@ class Permission extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
         'project_id',
         'name',
         'read',
         'write',
-        'givePermissions'
+        'changeName',
+        'addUsers',
+        'removeUsers',
+        'changeStatus',
+        'createPermissions',
+        'changePermissions',
     ];
 }

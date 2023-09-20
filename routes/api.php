@@ -29,5 +29,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/projects/{id}/users/{username}', [ProjectController::class, 'findProposedUsers']);
     Route::post('/projects/addUser', [ProjectController::class, 'addUser']);
     Route::get('/projects/{id}/users', [ProjectController::class, 'getUsersInProject']);
-    Route::post('/projects/changeStatus', [ProjectController::class, 'changeProjectStatus']);
+    Route::post('/projects/changeStatus', [ProjectController::class, 'updateProjectStatus']);
+    Route::post('/projects/leave', [ProjectController::class, 'leaveProject']);
+    Route::get('/projects/{id}/permissions', [ProjectController::class, 'getPermissionsInProject']);
+    Route::post('/projects/addPermission', [ProjectController::class, 'addPermission']);
+    Route::post('/projects/removePermission', [ProjectController::class, 'removePermission']);
+    Route::post('/projects/updatePermissionSettings', [ProjectController::class, 'updatePermissionSettings']);
+    Route::post('/projects/updateUserPermission', [ProjectController::class, 'updateUserPermissions']);
+    Route::post('/projects/deleteUser', [ProjectController::class, 'deleteUserFromProject']);
 });
