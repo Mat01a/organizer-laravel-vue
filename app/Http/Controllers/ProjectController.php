@@ -116,18 +116,17 @@ class ProjectController extends Controller
         $project_changes = json_decode($request->getContent());
         $changed_name = $project_changes->name;
 
-        $query = Permission::where([
-            ['user_id', $user->id],
-            ['project_id', $project_changes->id]
-            ])->get();
+        $check_permissions = $this->checkUserPermissionByUserID($user->id, $request->id);
+        $permissions = $check_permissions[0]->updateName;
 
-
-        // Checking if user have permissions for changing name
-        $permissions_project = $query[0]->givePermissions;
+        if(!$permissions)
+        {
+            return response("You don't have permissions to do that.", 400);
+        }
 
 
         // Changes name if there's difference between current one
-        if($permissions_project && !$this->projectDifference('name', $changed_name))
+        if(!$this->projectDifference('name', $changed_name))
         {
             try {
                 # Updating name
@@ -239,7 +238,7 @@ class ProjectController extends Controller
             'project_id' => 'required',
             'status' => 'required|between:0,1'
         ]);
-        $check_permissions = $this->checkUserPermissionByUserID($request->user()->id);
+        $check_permissions = $this->checkUserPermissionByUserID($request->user()->id, $request->project_id);
         $permissions = $check_permissions[0]->updateStatus;
 
         if(!$permissions)
@@ -403,7 +402,7 @@ class ProjectController extends Controller
         // If user is capable of changing this project 
         $user_id = $request->user()->id;
 
-        $check_permissions = $this->checkUserPermissionByUserID($user_id);
+        $check_permissions = $this->checkUserPermissionByUserID($user_id, $request->project_id);
         $permission = $check_permissions[0]->updatePermissions;
 
         if(!$permission)
@@ -448,7 +447,7 @@ class ProjectController extends Controller
     {
         $user_id = $request->user()->id;
         
-        $check_permissions = $this->checkUserPermissionByUserID($user_id);
+        $check_permissions = $this->checkUserPermissionByUserID($user_id, $request->project_id);
         $permissions = $check_permissions[0]->updatePermissions;
         // Checks if there's record with permissions
         if(!$permissions)
@@ -474,7 +473,7 @@ class ProjectController extends Controller
     {
         $user_id = $request->user()->id;
 
-        $check_permissions = $this->checkUserPermissionByUsername($request->username);
+        $check_permissions = $this->checkUserPermissionByUserID($user_id, $request->project_id);
         $permissions = $check_permissions[0]->removeUsers;
 
         if(!$permissions)
@@ -504,22 +503,24 @@ class ProjectController extends Controller
         }
     }
 
-    private function checkUserPermissionByUsername(string $username)
+    private function checkUserPermissionByUsername(string $username, int $project_id)
     {
         $validation = DB::table('permissions')
                         ->join('projects_users', 'permissions.id', '=', 'projects_users.permission_id')
                         ->join('users', 'projects_users.user_id', '=', 'users.id')
                         ->where('users.username', '=', $username)
+                        ->where('projects_users.project_id', '=', $project_id)
                         ->get();
 
         return $validation;
     }
 
-    private function checkUserPermissionByUserID(int $user_id)
+    private function checkUserPermissionByUserID(int $user_id, int $project_id)
     {
         $validation = DB::table('permissions')
                         ->join('projects_users', 'permissions.id', '=', 'projects_users.permission_id')
                         ->where('projects_users.user_id', '=', $user_id)
+                        ->where('projects_users.project_id', '=', $project_id)
                         ->get();
 
         return $validation;
