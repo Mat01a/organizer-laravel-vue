@@ -93,7 +93,6 @@ class ProjectController extends Controller
             DB::commit();
         } catch (\Throwable $th) {
             throw $th;
-            error_log($th);
             DB::rollBack();
         }
 
@@ -113,6 +112,8 @@ class ProjectController extends Controller
     public function update(Request $request)
     {
         $user = $request->user();
+        
+        
         $project_changes = json_decode($request->getContent());
         $changed_name = $project_changes->name;
 
@@ -131,10 +132,9 @@ class ProjectController extends Controller
             try {
                 # Updating name
                 Project::where('id', $project_changes->id)->update(['name' => $changed_name]);
-                error_log("Project name has been updated!");
                 return response('Project name has been updated!', 200);
             } catch (\Throwable $th) {
-                error_log($th);
+                throw $th;
             }
 
         }
@@ -144,6 +144,7 @@ class ProjectController extends Controller
 
     public function findProposedUsers($id, $username)
     {
+        
         $users_projects = Permission::select('user_id')
         ->where('project_id', '=', $id)->get();
         
@@ -160,14 +161,12 @@ class ProjectController extends Controller
     // Add user
     public function addUser(Request $request)
     {
-        $current_user = $request->user();
+        $user_id = $request->user()->id;
         //Check if this user is able to add new users
-        $permission = DB::table('permissions')
-                        ->join('projects_users', 'permissions.id', '=', 'projects_users.permission_id')
-                        ->where('permissions.addUsers', '=', 1)
-                        ->where('projects_users.user_id', '=', $current_user->id)
-                        ->get();
-        if(!count($permission))
+        $check_permissions = $this->checkUserPermissionByUserID($user_id, $request->project_id);
+        $permissions = $check_permissions[0]->addUsers;
+
+        if($permissions == 0)
         {
             return response("You don't have permissions for this action.", 400);
         }
@@ -199,19 +198,17 @@ class ProjectController extends Controller
 
                 //giving regular permissions
                 $permissions->user_id = $user_to_be_added[0]->id;
-                $permissions->project_id = $request->id;
+                $permissions->project_id = $request->project_id;
                 $permissions->permission_id = 2;
                 $permissions->save();
                 DB::commit();
                 return response()->json(['success' => true, 'name' => $user_to_be_added[0]->name, 'username' => $user_to_be_added[0]->username]);
             } catch (\Throwable $th) {
                 throw $th;
-                error_log($th);
                 DB::rollBack();
             }
         } catch (\Throwable $th) {
             throw $th;
-            error_log($th);
         }
     }
     
@@ -263,31 +260,24 @@ class ProjectController extends Controller
         $user = $request->user();
         $project_id = $request->id;
 
-        $project_users = Permission::where('project_id', '=', $project_id)
-        ->get();
+        $admin_permission = DB::table('permissions')
+                    ->where('project_id', '=', $project_id)
+                    ->select('id')
+                    ->first();
 
-        if(count($project_users) > 1)
+        $users_with_admin_permission = DB::table('projects_users')
+                                            ->where('permission_id', '=', $admin_permission->id)
+                                            ->whereNot('user_id', '=', $user->id)
+                                            ->get();
+        if(count($users_with_admin_permission) >= 1)
         {
-            $project_admins = Permission::where('project_id', '=', $project_id)
-            ->where('name', '=', 'admin')
-            ->where('read', '=', 1)
-            ->where('write', '=', 1)
-            ->where('updatePermissions', '=', 1)
-            ->where('user_id', 'IS NOT', $user->id)
-            ->get();
-            if(count($project_admins) > 0)
-            {
-                $user = Projects_users::where('user_id', '=', $user->id)
-                        ->where('project_id', '=', $project_id);
-                $user->delete();
-                return response("You successfully left project", 200);
-            }
-            else {
-                return response("You need have another admin in project to leave.", 400);
-            }
+            $user = Projects_users::where('user_id', '=', $user->id)
+                    ->where('project_id', '=', $project_id);
+            $user->delete();
+            return response("You successfully left project", 200);
         }
         else {
-            return response("You need have two or more users to leave project.", 400);
+            return response("You need have another admin in project to leave.", 400);
         }
     }
 
@@ -315,14 +305,13 @@ class ProjectController extends Controller
     {
         // If user is capable of adding permissions
         $user_id = $request->user()->id;
-        $check_permissions = $this->checkUserPermissionByUserID($user_id);
+        $check_permissions = $this->checkUserPermissionByUserID($request->user()->id, $request->project_id);
         $permissions = $check_permissions[0]->updatePermissions;
-        
+
         if(!$permissions)
         {
             return response("You don't have permissions to do that.", 400);
         }
-
         $request->validate([
             'project_id' => 'required|numeric',
             'name' => 'required|max:9'
@@ -350,6 +339,15 @@ class ProjectController extends Controller
     public function removePermission(Request $request)
     {
         $user_id = $request->user()->id;
+
+        $check_permissions = $this->checkUserPermissionByUserID($request->user()->id, $request->project_id);
+        $permissions = $check_permissions[0]->updatePermissions;
+
+        if($permissions == 0)
+        {
+            return response("You don't have permissions to do that.", 400);
+        }
+
         $request->validate([
             'project_id' => 'required|numeric',
             'permission_id' => 'required|numeric'
@@ -372,7 +370,7 @@ class ProjectController extends Controller
         // If there is no user with this permission
         if($users_with_permission->isEmpty())
         {
-                $check_permissions = $this->checkUserPermissionByUserID($user_id);
+                $check_permissions = $this->checkUserPermissionByUserID($user_id, $request->project_id);
                 $permissions = $check_permissions[0]->updatePermissions;
                 
                 if(!$permissions)
@@ -388,7 +386,6 @@ class ProjectController extends Controller
                     return response("Permission has been deleted!", 200);
                 } catch (\Throwable $th) {
                     throw $th;
-                    error_log($th);
                     return response("Something went wrong!", 400);
                 }
         }
@@ -403,11 +400,11 @@ class ProjectController extends Controller
         $user_id = $request->user()->id;
 
         $check_permissions = $this->checkUserPermissionByUserID($user_id, $request->project_id);
-        $permission = $check_permissions[0]->updatePermissions;
+        $permissions = $check_permissions[0]->updatePermissions;
 
-        if(!$permission)
+        if(!$permissions)
         {
-            return response("You don't have permissions to do that.", 400);
+            return response("You don't have permissions for this action.", 400);
         }
         
         $request->validate([
@@ -439,7 +436,6 @@ class ProjectController extends Controller
                 DB::commit();
         } catch (\Throwable $th) {
             throw $th;
-            error_log($th);
         }
     }
 
@@ -465,7 +461,6 @@ class ProjectController extends Controller
             DB::commit();
         } catch (\Throwable $th) {
             throw $th;
-            error_log($th);
         }
     }
 
@@ -526,8 +521,4 @@ class ProjectController extends Controller
         return $validation;
     }
 
-    public function getCurrentUserPermissionInProject(Request $request)
-    {
-        
-    }
 }
