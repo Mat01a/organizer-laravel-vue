@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\TaskController;
 use App\Models\User;
 
 /*
@@ -27,14 +28,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/projects', [ProjectController::class, 'store']);
     Route::patch('/projects', [ProjectController::class, 'update']);
     Route::get('/projects/{id}/users/{username}', [ProjectController::class, 'findProposedUsers']);
-    Route::post('/projects/addUser', [ProjectController::class, 'addUser']);
+    Route::post('/projects/add-user', [ProjectController::class, 'addUser']);
     Route::get('/projects/{id}/users', [ProjectController::class, 'getUsersInProject']);
-    Route::post('/projects/changeStatus', [ProjectController::class, 'updateProjectStatus']);
+    Route::post('/projects/change-status', [ProjectController::class, 'updateProjectStatus']);
     Route::post('/projects/leave', [ProjectController::class, 'leaveProject']);
     Route::get('/projects/{id}/permissions', [ProjectController::class, 'getPermissionsInProject']);
-    Route::post('/projects/addPermission', [ProjectController::class, 'addPermission']);
-    Route::post('/projects/removePermission', [ProjectController::class, 'removePermission']);
-    Route::post('/projects/updatePermissionSettings', [ProjectController::class, 'updatePermissionSettings']);
-    Route::post('/projects/updateUserPermission', [ProjectController::class, 'updateUserPermissions']);
-    Route::post('/projects/deleteUser', [ProjectController::class, 'deleteUserFromProject']);
+    Route::post('/projects/add-permission', [ProjectController::class, 'addPermission']);
+    Route::patch('/projects/remove-permission', [ProjectController::class, 'removePermission']);
+    Route::patch('/projects/update-permission-settings', [ProjectController::class, 'updatePermissionSettings']);
+    Route::patch('/projects/update-user-permission', [ProjectController::class, 'updateUserPermissions']);
+    Route::post('/projects/delete-user', [ProjectController::class, 'deleteUserFromProject']);
+    Route::get('/tasks/{id}', [TaskController::class, 'index']);
+    Route::post('/tasks/create', [TaskController::class, 'store']);
+    Route::patch('/tasks/update', [TaskController::class, 'update']);
+    Route::delete('/tasks/{id}', [TaskController::class, 'destroy']);
 });
