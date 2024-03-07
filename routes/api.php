@@ -26,7 +26,7 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/projects', [ProjectController::class, 'index']);
     Route::post('/projects', [ProjectController::class, 'store']);
-    Route::patch('/projects', [ProjectController::class, 'update']);
+    Route::patch('/projects/{project}', [ProjectController::class, 'update']);
     Route::get('/projects/{id}/users/{username}', [ProjectController::class, 'findProposedUsers']);
     Route::post('/projects/add-user', [ProjectController::class, 'addUser']);
     Route::get('/projects/{id}/users', [ProjectController::class, 'getUsersInProject']);
@@ -34,9 +34,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/projects/leave', [ProjectController::class, 'leaveProject']);
     Route::get('/projects/{id}/permissions', [ProjectController::class, 'getPermissionsInProject']);
     Route::post('/projects/add-permission', [ProjectController::class, 'addPermission']);
-    Route::patch('/projects/remove-permission', [ProjectController::class, 'removePermission']);
-    Route::patch('/projects/update-permission-settings', [ProjectController::class, 'updatePermissionSettings']);
-    Route::patch('/projects/update-user-permission', [ProjectController::class, 'updateUserPermissions']);
+    Route::patch('/projects/{project}/remove-permission', [ProjectController::class, 'removePermission']);
+    Route::patch('/projects/{project}/update-permission-settings', [ProjectController::class, 'updatePermissionSettings']);
+    Route::patch('/projects/{project}/update-user-permission', [ProjectController::class, 'updateUserPermissions']);
     Route::post('/projects/delete-user', [ProjectController::class, 'deleteUserFromProject']);
     Route::get('/tasks/{id}', [TaskController::class, 'index']);
     Route::post('/tasks/create', [TaskController::class, 'store']);
